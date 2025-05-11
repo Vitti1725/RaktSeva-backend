@@ -14,6 +14,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Create .env
+          run: |
+            cat <<EOF > .env
+            DB_NAME=testdb
+            DB_USER=testuser
+            DB_PASSWORD=testpass
+            DB_HOST=db
+            DB_PORT=5432
+            SECRET_KEY=ci-secret-key
+            DEBUG=False
+            EOF
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
