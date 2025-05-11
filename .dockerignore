@@ -1,0 +1,8 @@
+.env-windows/
+.__pycache__/
+.pytest_cache/
+.env
+.docker
+
+.git
+.gitignore

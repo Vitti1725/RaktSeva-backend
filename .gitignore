@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtualenvs
+env-windows/
+venv/
+
+# Env files
+.env
+raktseva/.env
+
+# Pytest cache
+.pytest_cache/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs & Docker
+*.log
+.docker/
