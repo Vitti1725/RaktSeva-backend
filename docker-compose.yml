@@ -22,10 +22,8 @@ services:
     image: postgres:15-alpine
     volumes:
       - dev-db-data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_DB: raktseva
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 321pass
+    env_file:
+      - ./.env
 
 volumes:
   dev-db-data:

@@ -19,7 +19,7 @@ jobs:
             cat <<EOF > .env
             DB_NAME=raktseva
             DB_USER=postgres
-            DB_PASSWORD=321pass
+            DB_PASSWORD=pass
             DB_HOST=db
             DB_PORT=5432
             SECRET_KEY=ci-secret-key
