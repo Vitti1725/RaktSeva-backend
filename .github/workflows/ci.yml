@@ -17,9 +17,9 @@ jobs:
       - name: Create .env
         run: |
             cat <<EOF > .env
-            DB_NAME=raktseva
-            DB_USER=postgres
-            DB_PASSWORD=321pass
+            DB_NAME=test_db
+            DB_USER=test_user
+            DB_PASSWORD=test_pass
             DB_HOST=db
             DB_PORT=5432
             SECRET_KEY=ci-secret-key
