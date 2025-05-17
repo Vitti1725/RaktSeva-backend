@@ -3,10 +3,23 @@ from rest_framework import serializers
 from users.utils import get_coordinates_from_city
 
 class HospitalSerializer(serializers.ModelSerializer):
+    """
+        Full hospital profile schema.
+
+        Fields:
+        - id (int, read-only)
+        - name (string)
+        - city (string)
+        - address (string)
+        - contact_number (string)
+        - registration_number (string)
+        - created_at (datetime, read-only)
+    """
     class Meta:
         model = Hospital
         exclude = ['user', 'latitude', 'longitude']
         read_only_fields = ['id', 'created_at']
+
 
     def create(self, validated_data):
         city = validated_data.get('city')
@@ -30,6 +43,14 @@ class HospitalSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 class HospitalPublicSerializer(serializers.ModelSerializer):
+    """
+       Public hospital schema (for blood requests).
+
+       Fields:
+       - id (int, read-only)
+       - name (string)
+       - city (string)
+    """
     class Meta:
         model = Hospital
         fields = ['id', 'name', 'city']

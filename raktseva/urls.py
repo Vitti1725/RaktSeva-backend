@@ -21,6 +21,19 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from users.custom_token import CustomTokenObtainPairView, CustomTokenRefreshView
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+
+schema_view = get_schema_view(
+   openapi.Info(
+      title="RaktSeva API",
+      default_version='v1',
+      description="A backend service for coordinating blood donations between hospitals and volunteer donors",
+   ),
+   public=True,
+   permission_classes=[permissions.AllowAny],
+)
 
 
 urlpatterns = [
@@ -33,4 +46,8 @@ urlpatterns = [
     # JWT Login
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
+
+    #swagger-docs
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]
+

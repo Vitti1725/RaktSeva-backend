@@ -3,6 +3,15 @@ from .models import Donor
 from users.utils import get_coordinates_from_city
 
 class DonorSerializer(serializers.ModelSerializer):
+    """
+        Public donor schema (for hospitals to browse).
+
+        Fields:
+        - id (int, read-only)
+        - blood_group (string)
+        - city (string)
+        - is_available (bool)
+    """
     class Meta:
         model = Donor
         fields = ['id', 'blood_group', 'city', 'contact_number', 'is_available']
@@ -22,9 +31,20 @@ class DonorSerializer(serializers.ModelSerializer):
 
 
 class DonorPublicSerializer(serializers.ModelSerializer):
+    """
+        Full donor profile schema.
+
+        Fields:
+        - id (int, read-only)
+        - blood_group (string)
+        - city (string)
+        - contact_number (string)
+        - is_available (bool)
+    """
     class Meta:
         model = Donor
         fields = ['id', 'blood_group', 'city', 'is_available']
+
 
 
 

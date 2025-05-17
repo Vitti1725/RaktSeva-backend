@@ -1,17 +1,14 @@
 from django.db import models
 from django.conf import settings
 from blood_request.models import BloodRequest
+from .enums import BloodGroupEnum
 
 class Donor(models.Model):
-    BLOOD_GROUPS = [
-        ('A+', 'A+'), ('A-', 'A-'),
-        ('B+', 'B+'), ('B-', 'B-'),
-        ('AB+', 'AB+'), ('AB-', 'AB-'),
-        ('O+', 'O+'), ('O-', 'O-'),
-    ]
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    blood_group = models.CharField(max_length=3, choices=BLOOD_GROUPS)
+    blood_group = models.CharField(max_length=3,
+                                   choices=[(e.value, e.value) for e in BloodGroupEnum],
+                                   help_text="Required blood group (e.g. 'O+').")
     city = models.CharField(max_length=100)
     contact_number = models.CharField(max_length=15)
     is_available = models.BooleanField(default=True)

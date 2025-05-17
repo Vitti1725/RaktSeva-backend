@@ -3,6 +3,9 @@
 .pytest_cache/
 .env
 .docker
+docker-compose*.yml
+proxy/
+
 
 .git
 .gitignore

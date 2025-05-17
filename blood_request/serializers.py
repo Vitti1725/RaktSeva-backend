@@ -5,6 +5,19 @@ from datetime import timedelta
 from django.utils import timezone
 
 class BloodRequestSerializer(serializers.ModelSerializer):
+    """
+        Blood request schema.
+
+        Fields:
+        - id (int, read-only)
+        - hospital (HospitalPublicSerializer)
+        - city (string)
+        - blood_group (string)
+        - quantity (int)
+        - is_fulfilled (bool)
+        - expired (bool, read-only)
+        - created_at (datetime, read-only)
+    """
     hospital = HospitalPublicSerializer(read_only=True)
     city = serializers.CharField(write_only=True)
     expired = serializers.SerializerMethodField()
@@ -18,6 +31,16 @@ class BloodRequestSerializer(serializers.ModelSerializer):
         return obj.created_at + timedelta(hours=48) < timezone.now()
 
 class NotifyDonorSerializer(serializers.Serializer):
+    """
+        Schema to notify donors.
+
+        Input:
+        - donor_ids (list of ints, required)
+        - message (string, required)
+
+        Output:
+        - sent (int): number of messages sent
+    """
     donor_ids = serializers.ListField()
     message = serializers.CharField(max_length=500)
 

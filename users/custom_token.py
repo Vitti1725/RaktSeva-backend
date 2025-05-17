@@ -7,6 +7,17 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+        JWT obtain pair schema.
+
+        Input:
+        - email (string, required)
+        - password (string, required)
+
+        Output:
+        - access (string)
+        - refresh (string)
+    """
     def validate(self, attrs):
         data = super().validate(attrs)
 
@@ -16,10 +27,32 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 class CustomTokenObtainPairView(TokenObtainPairView):
+    """
+        Obtain JWT access & refresh tokens.
+
+        **POST** `/api/token/`
+
+        Request JSON:
+          - email (string, required)
+          - password (string, required)
+
+        Responses:
+          - 200 OK: `{ access, refresh }`
+          - 401 Unauthorized: bad credentials
+    """
     serializer_class = CustomTokenObtainPairSerializer
 
 
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    """
+        JWT refresh schema.
+
+        Input:
+        - refresh (string, required)
+
+        Output:
+        - access (string)
+    """
     def validate(self, attrs):
         data = super().validate(attrs)
 
@@ -40,4 +73,17 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 
 
 class CustomTokenRefreshView(TokenRefreshView):
+    """
+        Refresh JWT access token.
+
+        **POST** `/api/token/refresh/`
+
+        Request JSON:
+          - refresh (string, required)
+
+        Responses:
+          - 200 OK: `{ access }`
+          - 401 Unauthorized: invalid or expired refresh token
+    """
+
     serializer_class = CustomTokenRefreshSerializer

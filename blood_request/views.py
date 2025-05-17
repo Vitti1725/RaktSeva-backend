@@ -1,3 +1,4 @@
+# coding=utf-8
 from rest_framework import generics, permissions
 from .models import BloodRequest
 from donor.models import Donor, DonorInterest
@@ -13,16 +14,46 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 from django.core.mail import send_mail
+from drf_yasg.utils import swagger_auto_schema
 
 
 class BloodRequestCreateView(generics.CreateAPIView):
+    """
+        Create a new blood request (hospital-only).
+
+        **POST** `/api/blood-requests/create/`
+
+        Headers:
+          - Authorization: Bearer `<access_token>`
+
+        Request JSON:
+          - blood_group (string, required)
+          - city (string, required)
+          - quantity (integer, required)
+
+        Responses:
+          - 201 Created: BloodRequest data
+          - 403 Forbidden: wrong role
+    """
     serializer_class = BloodRequestSerializer
     permission_classes = [permissions.IsAuthenticated, IsActiveHospital]
 
     def perform_create(self, serializer):
         serializer.save(hospital=self.request.user.hospital)
 
+
 class BloodRequestListView(generics.ListAPIView):
+    """
+        List your hospital’s blood requests.
+
+        **GET** `/api/blood-requests/my/`
+
+        Headers:
+          - Authorization: Bearer `<access_token>`
+
+        Responses:
+          - 200 OK: paginated list of your requests
+    """
     serializer_class = BloodRequestSerializer
     permission_classes = [permissions.IsAuthenticated, IsActiveHospital]
 
@@ -30,6 +61,18 @@ class BloodRequestListView(generics.ListAPIView):
         return BloodRequest.objects.filter(hospital=self.request.user.hospital).order_by('id')
 
 class AvailableBloodRequestsView(generics.ListAPIView):
+    """
+        List unfulfilled, non-expired requests matching your donor profile.
+
+        **GET** `/api/blood-requests/available/`
+
+        Headers:
+          - Authorization: Bearer `<access_token>`
+
+        Responses:
+          - 200 OK: matching BloodRequest list
+          - 403/401: wrong role or unauthenticated
+    """
     serializer_class = BloodRequestSerializer
     permission_classes = [permissions.IsAuthenticated, IsActiveDonor]
 
@@ -46,6 +89,18 @@ class AvailableBloodRequestsView(generics.ListAPIView):
         ).order_by('-created_at')
 
 class FulfillBloodRequestView(APIView):
+    """
+        Mark one of your hospital’s requests as fulfilled.
+
+        **PATCH** `/api/blood-requests/{id}/fulfill/`
+
+        Headers:
+          - Authorization: Bearer `<access_token>`
+
+        Responses:
+          - 200 OK: updated BloodRequest
+          - 403/404: forbidden or not found
+    """
     permission_classes = [permissions.IsAuthenticated, IsActiveHospital]
 
     def patch(self, request, pk):
@@ -62,6 +117,18 @@ class FulfillBloodRequestView(APIView):
 
 
 class ExtendBloodRequestView(APIView):
+    """
+        Extend a request’s expiry by +48h.
+
+        **PATCH** `/api/blood-requests/{id}/extend/`
+
+        Headers:
+          - Authorization: Bearer `<access_token>`
+
+        Responses:
+          - 200 OK: expiry extended
+          - 403/404: forbidden or not found
+    """
     permission_classes = [permissions.IsAuthenticated, IsActiveHospital]
 
     def patch(self, request, pk):
@@ -77,6 +144,18 @@ class ExtendBloodRequestView(APIView):
         return Response({"message": "Request extended by 48 hours."})
 
 class CancelBloodRequestView(APIView):
+    """
+        Cancel (delete) one of your requests.
+
+        **DELETE** `/api/blood-requests/{id}/cancel/`
+
+        Headers:
+          - Authorization: Bearer `<access_token>`
+
+        Responses:
+          - 200 OK: deletion confirmed
+          - 403/404: forbidden or not found
+    """
     permission_classes = [permissions.IsAuthenticated, IsActiveHospital]
 
     def delete(self, request, pk):
@@ -91,6 +170,18 @@ class CancelBloodRequestView(APIView):
         return Response({"message": "Request cancelled successfully."}, status=status.HTTP_200_OK)
 
 class DonorInterestCreateView(APIView):
+    """
+        Express interest in helping with a blood request.
+
+        **POST** `/api/blood-requests/{id}/help/`
+
+        Headers:
+          - Authorization: Bearer `<access_token>`
+
+        Responses:
+          - 201 Created: interest recorded
+          - 400/403/404: duplicate, forbidden, or not found
+    """
     permission_classes = [permissions.IsAuthenticated, IsActiveDonor]
 
     def post(self, request, pk):
@@ -116,10 +207,24 @@ class DonorInterestCreateView(APIView):
         return Response({"message": "Thank you for offering to help!"}, status=status.HTTP_201_CREATED)
 
 class InterestedDonorsView(generics.ListAPIView):
+    """
+        List all donors who offered help on your request.
+
+        **GET** `/api/blood-requests/{id}/interested-donors/`
+
+        Headers:
+          - Authorization: Bearer `<access_token>`
+
+        Responses:
+          - 200 OK: list of donors
+          - 403/404: forbidden or not found
+    """
     serializer_class = DonorPublicSerializer
     permission_classes = [permissions.IsAuthenticated, IsActiveHospital]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return DonorInterest.objects.none()
         blood_request = get_object_or_404(BloodRequest, id=self.kwargs['pk'])
 
         if blood_request.hospital != self.request.user.hospital:
@@ -129,6 +234,21 @@ class InterestedDonorsView(generics.ListAPIView):
         return Donor.objects.filter(id__in=donor_ids).order_by('id')
 
 class NearbyDonorsView(generics.ListAPIView):
+    """
+        List donors within 20 km matching your request.
+
+        **GET** `/api/blood-requests/nearby-donors/`
+
+        Headers:
+          - Authorization: Bearer `<access_token>`
+
+        Optional query params:
+          - blood_group, city
+
+        Responses:
+          - 200 OK: nearby donor list
+          - 403/401: wrong role or unauthenticated
+    """
     serializer_class = DonorPublicSerializer
     permission_classes = [permissions.IsAuthenticated, IsActiveHospital]
 
@@ -156,6 +276,22 @@ class NearbyDonorsView(generics.ListAPIView):
         return Donor.objects.filter(id__in=nearby_donors).order_by('id')
 
 class NotifyDonorView(APIView):
+    """
+        Send a private message to one or more donors.
+
+        **POST** `/api/blood-requests/notify-donors/`
+
+        Headers:
+          - Authorization: Bearer `<access_token>`
+
+        Request JSON:
+          - donor_ids (list of ints, required)
+          - message (string, required)
+
+        Responses:
+          - 200 OK: `{ "sent": <count> }`
+          - 400/403: invalid input or forbidden
+    """
     permission_classes = [permissions.IsAuthenticated, IsActiveHospital]
 
     def post(self, request, *args, **kwargs):

@@ -3,8 +3,13 @@ LABEL maintainer="vittigupta"
 ENV PYTHONUNBUFFERED=1
 ARG DEV=false
 
-# Install & cache dependencies
-COPY requirements.txt /tmp/requirements.txt
+COPY ./requirements.txt /tmp/requirements.txt
+COPY ./scripts  /scripts
+COPY . /app
+WORKDIR /app
+EXPOSE 8000
+
+
 RUN python -m venv /venv \
     && /venv/bin/pip install --upgrade pip \
     && apk add --no-cache --virtual .build-deps \
@@ -12,19 +17,17 @@ RUN python -m venv /venv \
     && /venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt \
     && if [ "$DEV" = "true" ] ; then /venv/bin/pip install pytest pytest-django; fi \
     && apk del .build-deps \
-    && rm -rf /tmp/requirements.txt /var/cache/apk/*
+    && rm -rf /tmp/requirements.txt /var/cache/apk/* \
+    && adduser -D django \
+    && mkdir -p /vol/web/static \
+    && chown -R django:django /app /scripts /vol \
+    && chmod -R 755 /vol \
+    && apk add --no-cache su-exec dos2unix \
+    && dos2unix /scripts/*.sh \
+    && chmod +x /scripts/entrypoint.sh /scripts/run.sh
 
-# Copy project code
-COPY . /app
-WORKDIR /app
+ENV PATH="/scripts:/venv/bin:$PATH"
 
-# Create non-root user
-RUN adduser -D django \
-    && chown -R django:django /app
-
-USER django
-ENV PATH="/venv/bin:$PATH"
-EXPOSE 8000
-
-# Wait for DB, migrate, collectstatic, then run dev server
-CMD ["sh", "-c", "python manage.py wait_for_db && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"]
+USER root
+ENTRYPOINT ["/scripts/entrypoint.sh"]
+CMD ["/scripts/run.sh"]
