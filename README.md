@@ -124,7 +124,7 @@ docker-compose -f docker-compose-deploy.yml up -d
 
 ---
 
-### 🚀 GitHub Actions CI/CD
+### GitHub Actions CI/CD
 
 -  CI runs on PRs and pushes to main
 -  Run tests, and build Docker image automatically
